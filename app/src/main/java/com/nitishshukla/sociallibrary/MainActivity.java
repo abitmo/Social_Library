@@ -29,18 +29,29 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
 import android.app.Activity;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener{
     public final static String EXTRA_MESSAGE = "com.mycompany.myfirstapp.MESSAGE";
     private Button scanBtn;
-    private TextView formatTxt, contentTxt, isbnJSON;
+    private TextView formatTxt, contentTxt, jsonTxt;
+    private ImageView img_book;
     private String strISBN, strURL;
 
     @Override
@@ -51,6 +62,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         scanBtn = (Button)findViewById(R.id.scan_button);
         formatTxt = (TextView)findViewById(R.id.scan_format);
         contentTxt = (TextView)findViewById(R.id.scan_content);
+        //isbnJSON = (TextView)findViewById(R.id.isbn_json);
+        img_book = (ImageView) findViewById(R.id.imgBook);
 
         scanBtn.setOnClickListener(this);
     }
@@ -73,32 +86,36 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
             String scanFormat = scanningResult.getFormatName();
             formatTxt.setText("FORMAT: " + scanFormat);
             contentTxt.setText("CONTENT: " + scanContent);
-            strISBN = contentTxt.getText().toString();
-
+            strISBN = "9780262029629";
+            getGoogleBook("https://www.googleapis.com/books/v1/volumes?q=isbn:97806670088751&key=AIzaSyBHAWIu3KOp89Xbmsm9Nz5RqY_iTYZyJUQ");
         }
         else{
-            Toast toast = Toast.makeText(getApplicationContext(),
-                    "No scan data received!", Toast.LENGTH_SHORT);
+            Toast toast = Toast.makeText(getApplicationContext(), "No scan data received!", Toast.LENGTH_SHORT);
             toast.show();
         }
     }
 
-    /** Called when the user clicks the "Add Book" button */
-    public void sendMessage(View view) {
-        // Do something in response to button
-        Intent intent = new Intent(this, AddBookActivity.class);
-        EditText editText = (EditText) findViewById(R.id.edit_message);
-        String message = editText.getText().toString();
-        intent.putExtra(EXTRA_MESSAGE, message);
-        startActivity(intent);
-    }
-
-    public void getGoogleBook(String strISBN)
+    public void getGoogleBook(String url)
     {
-        strURL.concat("https://www.googleapis.com/books/v1/volumes?q=isbn:");
-        strURL.concat(strISBN);
-        strURL.concat("&key=AIzaSyBHAWIu3KOp89Xbmsm9Nz5RqY_iTYZyJUQ");
+        jsonTxt = (TextView) findViewById(R.id.isbn_json);
 
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
 
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        jsonTxt.setText("Response: " + response.toString());
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO Auto-generated method stub
+
+                    }
+                });
+
+        // Access the RequestQueue through your singleton class.
+        MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 }
