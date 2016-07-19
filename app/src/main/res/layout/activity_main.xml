@@ -29,13 +29,6 @@
         android:textIsSelectable="true"
         android:layout_centerHorizontal="true"
         android:layout_below="@id/scan_format" />
-    <TextView
-        android:id="@+id/isbn_json"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textIsSelectable="true"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/scan_content" />
 
     <ImageView
         android:layout_width="wrap_content"
@@ -44,4 +37,19 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get Book From ISBN"
+        android:id="@+id/btnBookFromISBN"
+        android:layout_below="@+id/scan_content"
+        android:layout_centerHorizontal="true" />
+    <TextView
+        android:id="@+id/isbn_json"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textIsSelectable="true"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/btnBookFromISBN" />
 </RelativeLayout>

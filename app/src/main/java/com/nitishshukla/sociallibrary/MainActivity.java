@@ -1,25 +1,6 @@
-//Books API Key = AIzaSyBHAWIu3KOp89Xbmsm9Nz5RqY_iTYZyJUQ for
-/*c:\Program Files\Java\jre7\bin>keytool -exportcert -alias androiddebugkey -keyst
-        ore C:\Users\Nitish\.android\debug.keystore -list -v
-        Enter keystore password:
-        Alias name: androiddebugkey
-        Creation date: Jul 8, 2016
-        Entry type: PrivateKeyEntry
-        Certificate chain length: 1
-        Certificate[1]:
-        Owner: C=US, O=Android, CN=Android Debug
-        Issuer: C=US, O=Android, CN=Android Debug
-        Serial number: 1
-        Valid from: Fri Jul 08 22:29:02 IST 2016 until: Sun Jul 01 22:29:02 IST 2046
-        Certificate fingerprints:
-        MD5:  C4:C9:A0:B7:04:37:8E:4B:C4:8C:83:49:7A:23:60:9F
-        SHA1: 11:E4:06:90:87:03:84:B2:2B:B7:84:0B:2C:68:C4:C4:8A:CD:E0:E8
-        SHA256: 77:4A:7E:93:AD:2C:67:CC:20:E3:57:A9:2F:72:B3:A8:BB:32:A3:06:7C:4B:01:43:25:53:04:36:17:46:1C:DB
-        Signature algorithm name: SHA1withRSA
-        Version: 1*/
-
+//Books API Key = AIzaSyC4bXzxTCAjWNpRHoh3srFHJlzy6nOnmx0
 //API call
-//GET https://www.googleapis.com/books/v1/volumes?q=isbn:<ISBN>&key=AIzaSyBHAWIu3KOp89Xbmsm9Nz5RqY_iTYZyJUQ
+//GET "https://www.googleapis.com/books/v1/volumes?q=isbn:9780262029629&key=AIzaSyC4bXzxTCAjWNpRHoh3srFHJlzy6nOnmx0"
 package com.nitishshukla.sociallibrary;
 
 import android.content.Intent;
@@ -29,6 +10,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
 
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -45,11 +27,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.net.URLEncoder;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener{
     public final static String EXTRA_MESSAGE = "com.mycompany.myfirstapp.MESSAGE";
-    private Button scanBtn;
+    private Button scanBtn, getBookFromISBNBtn;
     private TextView formatTxt, contentTxt, jsonTxt;
     private ImageView img_book;
     private String strISBN, strURL;
@@ -60,20 +45,37 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
         setContentView(R.layout.activity_main);
 
         scanBtn = (Button)findViewById(R.id.scan_button);
+        getBookFromISBNBtn = (Button)findViewById(R.id.btnBookFromISBN);
         formatTxt = (TextView)findViewById(R.id.scan_format);
         contentTxt = (TextView)findViewById(R.id.scan_content);
         //isbnJSON = (TextView)findViewById(R.id.isbn_json);
         img_book = (ImageView) findViewById(R.id.imgBook);
 
         scanBtn.setOnClickListener(this);
+        getBookFromISBNBtn.setOnClickListener(this);
     }
 
     public void onClick(View v){
         //respond to clicks
-        if(v.getId()==R.id.scan_button){
-            //scan
-            IntentIntegrator scanIntegrator = new IntentIntegrator(this);
-            scanIntegrator.initiateScan();
+        switch (v.getId()) {
+            case R.id.scan_button: {
+                //scan
+                IntentIntegrator scanIntegrator = new IntentIntegrator(this);
+                scanIntegrator.initiateScan();
+                break;
+            }
+            case R.id.btnBookFromISBN: {
+                //CONTENT:
+                strISBN = contentTxt.getText().toString();
+                strISBN = strISBN.substring(9);
+                Toast toast = Toast.makeText(getApplicationContext(), strISBN, Toast.LENGTH_LONG);
+                toast.show();
+                strISBN = "https://www.googleapis.com/books/v1/volumes?q=isbn:".concat(strISBN);
+                strISBN = strISBN.concat("&key=AIzaSyC4bXzxTCAjWNpRHoh3srFHJlzy6nOnmx0");
+                getGoogleBook(strISBN);
+                break;
+            }
+
         }
     }
 
@@ -86,8 +88,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
             String scanFormat = scanningResult.getFormatName();
             formatTxt.setText("FORMAT: " + scanFormat);
             contentTxt.setText("CONTENT: " + scanContent);
-            strISBN = "9780262029629";
-            getGoogleBook("https://www.googleapis.com/books/v1/volumes?q=isbn:97806670088751&key=AIzaSyBHAWIu3KOp89Xbmsm9Nz5RqY_iTYZyJUQ");
         }
         else{
             Toast toast = Toast.makeText(getApplicationContext(), "No scan data received!", Toast.LENGTH_SHORT);
@@ -97,6 +97,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
 
     public void getGoogleBook(String url)
     {
+        Toast toast = Toast.makeText(getApplicationContext(), url, Toast.LENGTH_LONG);
+        toast.show();
         jsonTxt = (TextView) findViewById(R.id.isbn_json);
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
@@ -107,15 +109,61 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
                         jsonTxt.setText("Response: " + response.toString());
                     }
                 }, new Response.ErrorListener() {
-
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        // TODO Auto-generated method stub
+                        Toast toast = Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT);
+                        toast.show();
+                        String json = null;
 
+                        NetworkResponse response = error.networkResponse;
+                        if(response != null && response.data != null){
+                            switch(response.statusCode){
+                                case 400:
+                                    json = new String(response.data);
+                                    if(json != null) {
+                                        displayMessage(json);
+                                        jsonTxt.setText(json);
+                                    }
+                                    break;
+                            }
+                            //Additional cases
+                        }
                     }
                 });
 
         // Access the RequestQueue through your singleton class.
         MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
+    }
+    public void onErrorResponse(VolleyError error) {
+        String json = null;
+
+        NetworkResponse response = error.networkResponse;
+        if(response != null && response.data != null){
+            switch(response.statusCode){
+                case 400:
+                    json = new String(response.data);
+                    json = trimMessage(json, "message");
+                    if(json != null) displayMessage(json);
+                    break;
+            }
+            //Additional cases
+        }
+    }
+
+    public String trimMessage(String json, String key){
+        String trimmedString = null;
+
+        try{
+            JSONObject obj = new JSONObject(json);
+            trimmedString = obj.getString(key);
+        } catch(JSONException e){
+            e.printStackTrace();
+            return null;
+        }
+
+        return trimmedString;
+    }
+    public void displayMessage(String toastString){
+        Toast.makeText(getApplicationContext(), toastString, Toast.LENGTH_LONG).show();
     }
 }
